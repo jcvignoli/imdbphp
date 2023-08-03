@@ -485,16 +485,20 @@ class Person extends MdbBase
      * @return string birthname
      * @see IMDB person page /bio
      */
-    public function birthname()
-    {
-        if (empty($this->birth_name)) {
-            $page = $this->getPage("Bio");
-            if (preg_match("!Birth Name</td>\s*<td>(.*?)</td>\n!m", $page, $match)) {
-                $this->birth_name = trim($match[1]);
-            }
+// updated by @jc_vignoli 3.8.2023
+public function birthname()
+{
+    if (empty($this->birth_name)) {
+        $this->getPage("Bio");
+        if (preg_match("!Birth Name</td><td>(.*?)</td>\n!m", $this->page["Bio"], $match)) {
+            $this->birth_name = trim($match[1]);
+        } elseif (preg_match('|Birth name","htmlContent":"(.*?)"}|ims', $this->page["Bio"], $match)) {
+            $this->birth_name = trim($match[1]);
         }
-        return $this->birth_name;
     }
+    return $this->birth_name;
+}
+
 
     #-------------------------------------------------------------[ Nick Name ]---
 
@@ -502,25 +506,35 @@ class Person extends MdbBase
      * @return array nicknames array[0..n] of strings
      * @see IMDB person page /bio
      */
-    public function nickname()
-    {
-        if (empty($this->nick_name)) {
-            $page = $this->getPage("Bio");
-            if (preg_match("!Nicknames</td>\s*<td>\s*(.*?)</td>\s*</tr>!ms", $page, $match)) {
-                $nicks = explode("<br/>", $match[1]);
-                foreach ($nicks as $nick) {
-                    $nick = trim($nick);
-                    if (!empty($nick)) {
-                        $this->nick_name[] = $nick;
-                    }
+// updated by @jc_vignoli 3.8.2023
+public function nickname()
+{
+    if (empty($this->nick_name)) {
+        $this->getPage("Bio");
+        if (preg_match("!Nicknames</td>\s*<td>\s*(.*?)</td>\s*</tr>!ms", $this->page["Bio"], $match)) {
+            $nicks = explode("<br>", $match[1]);
+            foreach ($nicks as $nick) {
+                $nick = trim($nick);
+                if (!empty($nick)) {
+                    $this->nick_name[] = $nick;
                 }
-            } elseif (preg_match('!Nickname</td><td>\s*([^<]+)\s*</td>!', $page, $match)) {
-                $this->nick_name[] = trim($match[1]);
+            }
+        } elseif (preg_match('!Nickname</td><td>\s*([^<]+)\s*</td>!', $this->page["Bio"], $match)) {
+            $this->nick_name[] = trim($match[1]);
+        } elseif (preg_match('/Nicknames","listContent":\\[[^\\]](.*?)\\]\\}/i', $this->page["Bio"], $match)) {
+            $nicks = explode(",", $match[1]);
+            foreach ($nicks as $nick) {
+                if (preg_match('|:"(.*?)"|ims', $nick, $match)) {
+                    $nick = trim($match[1]);
+                }
+                if (!empty($nick)) {
+                    $this->nick_name[] = $nick;
+                }
             }
         }
-        return $this->nick_name;
     }
-
+    return $this->nick_name;
+}
     #------------------------------------------------------------------[ Born ]---
 
     /** Get Birthday
@@ -528,24 +542,37 @@ class Person extends MdbBase
      *         where month is the month name, and mon the month number
      * @see IMDB person page /bio
      */
-    public function born()
-    {
-        if (empty($this->birthday)) {
-            if (preg_match('|Born</td>(.*)</td|iUms', $this->getPage("Bio"), $match)) {
-                preg_match('|/search/name\?birth_monthday=(\d+)-(\d+).*?\n?>(.*?) \d+<|', $match[1], $daymon);
-                preg_match('|/search/name\?birth_year=(\d{4})|ims', $match[1], $dyear);
-                preg_match('|/search/name\?birth_place=.*?"\s*>(.*?)<|ims', $match[1], $dloc);
-                $this->birthday = array(
-                  "day" => @$daymon[2],
-                  "month" => @$daymon[3],
-                  "mon" => @$daymon[1],
-                  "year" => @$dyear[1],
-                  "place" => @$dloc[1]
-                );
-            }
+// updated by @jc_vignoli 3.8.2023
+public function born()
+{
+    if (empty($this->birthday)) {
+        if (preg_match('|Born</td>(.*)</td|iUms', $this->getPage("Bio"), $match)) {
+            preg_match('|/search/name\?birth_monthday=(\d+)-(\d+).*?\n?>(.*?) \d+<|', $match[1], $daymon);
+            preg_match('|/search/name\?birth_year=(\d{4})|ims', $match[1], $dyear);
+            preg_match('|/search/name\?birth_place=.*?"\s*>(.*?)<|ims', $match[1], $dloc);
+            $this->birthday = array(
+              "day" => @$daymon[2],
+              "month" => @$daymon[3],
+              "mon" => @$daymon[1],
+              "year" => @$dyear[1],
+              "place" => @$dloc[1]
+            );
+        } elseif (preg_match('|Born</span>(.*)</div></div></div></li>|iUms', $this->getPage("Bio"), $match)) {
+            preg_match('|/search/name/\?birth_monthday=(\d+)-(\d+).*?\n?>(.*?) \d+<|', $match[1], $daymon);
+            preg_match('|/search/name/\?birth_year=(\d{4})|ims', $match[1], $dyear);
+            preg_match('|/search/name/\?birth_place=.*?"\s*>(.*?)<|ims', $match[1], $dloc);
+            $this->birthday = array(
+              "day" => @$daymon[2],
+              "month" => @$daymon[3],
+              "mon" => @$daymon[1],
+              "year" => @$dyear[1],
+              "place" => @$dloc[1]
+            );
         }
-        return $this->birthday;
+
     }
+    return $this->birthday;
+}
 
     #------------------------------------------------------------------[ Died ]---
 
@@ -555,26 +582,40 @@ class Person extends MdbBase
      *         where month is the month name, and mon the month number
      * @see IMDB person page /bio
      */
-    public function died()
-    {
-        if (empty($this->deathday)) {
-            $page = $this->getPage("Bio");
-            if (preg_match('|Died</td>(.*?)</td|ims', $page, $match)) {
-                preg_match('|/search/name\?death_date=(\d+)-(\d+)-(\d+).*?\n?>(.*?) \d+<|', $match[1], $daymonyear);
-                preg_match('|/search/name\?death_place=.*?"\s*>(.*?)<|ims', $match[1], $dloc);
-                preg_match('/\(([^\)]+)\)/ims', $match[1], $dcause);
-                $this->deathday = array(
-                  "day" => @$daymonyear[3],
-                  "month" => @$daymonyear[4],
-                  "mon" => @$daymonyear[2],
-                  "year" => @$daymonyear[1],
-                  "place" => @trim(strip_tags($dloc[1])),
-                  "cause" => @$dcause[1]
-                );
-            }
+// updated by @jc_vignoli 3.8.2023
+public function died()
+{
+    if (empty($this->deathday)) {
+        $page = $this->getPage("Bio");
+        if (preg_match('|Died</td>(.*?)</td|ims', $page, $match)) {
+            preg_match('|/search/name\?death_date=(\d+)-(\d+)-(\d+).*?\n?>(.*?) \d+<|', $match[1], $daymonyear);
+            preg_match('|/search/name\?death_place=.*?"\s*>(.*?)<|ims', $match[1], $dloc);
+            preg_match('/\(([^\)]+)\)/ims', $match[1], $dcause);
+            $this->deathday = array(
+              "day" => @$daymonyear[3],
+              "month" => @$daymonyear[4],
+              "mon" => @$daymonyear[2],
+              "year" => @$daymonyear[1],
+              "place" => @trim(strip_tags($dloc[1])),
+              "cause" => @$dcause[1]
+            );
+        } elseif (preg_match('|Died</span>(.*)</div></div></div></li>|iUms', $this->getPage("Bio"), $match)) {
+            preg_match('|/search/name/\?death_date=(\d+)-(\d+)-(\d+).*?\n?>(.*?) \d+<|', $match[1], $daymonyear);
+            preg_match('|/search/name/\?death_date=(\d{4})|ims', $match[1], $dyear);
+            preg_match('|/search/name/\?death_place=.*?"\s*>(.*?)<|ims', $match[1], $dloc);
+            preg_match('/\(([^\)]+)\)/ims', $match[1], $dcause);
+            $this->deathday = array(
+              "day" => @$daymonyear[3],
+              "month" => @$daymonyear[4],
+              "mon" => @$daymonyear[2],
+              "year" => @$daymonyear[1],
+              "place" => @trim(strip_tags($dloc[1])),
+              "cause" => @$dcause[1]
+            );
         }
-        return $this->deathday;
     }
+    return $this->deathday;
+}
 
     #-----------------------------------------------------------[ Body Height ]---
 
@@ -765,28 +806,36 @@ class Person extends MdbBase
                 return array();
             } // no such page
             if (preg_match(
-                '!<h4 class="li_group">Mini Bio[^>]+?>(.+?)<(h4 class="li_group"|div class="article")!ims',
+/**                '!<h4 class="li_group">Mini Bio[^>]+?>(.+?)<(h4 class="li_group"|div class="article")!ims', */
+// updated by @jc_vignoli 3.8.2023
+                '!<h3 class="ipc-title__text"><span id="mini_bio">Mini Bio<\/span>(.+?)role="presentation"><\/div><\/div><\/li><\/ul><\/div><\/section>!ims',
                 $page,
                 $block
             )) {
                 preg_match_all(
-                    '!<div class="soda.*?\s*<p>\s*(?<bio>.+?)\s</p>\s*<p><em>- IMDb Mini Biography By:\s*(?<author>.+?)\s*</em>!ims',
+//                    '!<div class="soda.*?\s*<p>\s*(?<bio>.+?)\s</p>\s*<p><em>- IMDb Mini Biography By:\s*(?<author>.+?)\s*</em>!ims',
+// updated by @jc_vignoli 3.8.2023
+                    '!<div class="ipc-html-content-inner-div">(?<bio>.+?)(<div class=".+?" role="presentation">)?(<div class="ipc-html-content-inner-div">- IMDb Mini Biography By:\s)?(?<author>.+?)?<\/div><\/div><\/li><\/ul>!ims',
                     $block[1],
                     $matches
                 );
                 for ($i = 0; $i < count($matches[0]); ++$i) {
                     $bio_bio["desc"] = str_replace(
-                        "href=\"/name/nm",
-                        "href=\"https://" . $this->imdbsite . "/name/nm",
-                        str_replace(
-                            "href=\"/title/tt",
-                            "href=\"https://" . $this->imdbsite . "/title/tt",
-                            str_replace(
-                                '/search/name',
-                                'https://' . $this->imdbsite . '/search/name',
-                                $matches['bio'][$i]
-                            )
-                        )
+                    	'?ref_=nmbio_mbio',
+                    	'',
+                    	str_replace(
+		                "class=\"ipc-md-link ipc-md-link--entity\" href=\"/name/nm",
+		                "href=\"https://" . $this->imdbsite . "/name/nm",
+		                str_replace(
+		                    "class=\"ipc-md-link ipc-md-link--entity\" href=\"/title/tt",
+		                    "href=\"https://" . $this->imdbsite . "/title/tt",
+		                    str_replace(
+		                        '/search/name',
+		                        'https://' . $this->imdbsite . '/search/name',
+		                        $matches['bio'][$i]
+		                    )
+		                )
+		               )
                     );
                     $author = 'Written by ' . (str_replace(
                         '/search/name',
