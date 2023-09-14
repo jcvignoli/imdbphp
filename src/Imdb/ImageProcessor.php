@@ -1,11 +1,12 @@
 <?php
-
 #############################################################################
 # IMDBPHP                                                                  #
 # JCV personal and dirty class
 #############################################################################
 
 namespace Imdb;
+
+use Psr\Log\LoggerInterface;
 
 class ImageProcessor {
 
@@ -14,6 +15,7 @@ class ImageProcessor {
 	 * 800 for both properties by default in Config
 	 */
 	public function __construct(
+		private LoggerInterface $logger,
 		private string $width,
 		private string $height
 	) {}
@@ -23,13 +25,18 @@ class ImageProcessor {
 	 */
 	public function maybe_resize_big($src, $crop=0): bool {
 
-		 if ( str_contains( $src, '_big' ) ) {
+		 if ( is_file( $src ) && str_contains( $src, '_big' ) ) {
 			$pic_type = strtolower(strrchr($src,"."));     
 			$path_tmp = str_replace( '_big', '_big_tmp', $src );
-			$this->image_resize($src, $path_tmp, $this->width, $this->width, 0);
+			$bool_result = $this->image_resize($src, $path_tmp, $this->width, $this->width, 0);
 			unlink($src);
-			rename( $path_tmp, $src );
-			return true;
+			if ( $bool_result === true ) {
+				$this->logger->debug('[ImageProcessor] Picture ' .  strrchr ( $src, '/' ) . ' successfully processed ');
+				rename( $path_tmp, $src );
+				return true;
+			}
+			$this->logger->warning('[ImageProcessor] Could not process ' . strrchr ( $src, '/' ) );
+			return false;
 		}
 		return false;
 	}
@@ -40,8 +47,10 @@ class ImageProcessor {
 	 */
 	private function image_resize($src, $dst, $width, $height, $crop=0): bool|string {
 
-	  if(!list($w, $h) = getimagesize($src)) return "Unsupported picture type!";
-
+	  if(!list($w, $h) = getimagesize($src)) {
+	    		    $this->logger->warning('[ImageProcessor] Unsupported picture type ' . strrchr ( $src, '/' ) );
+	    		    return false;
+		};
 	  $type = strtolower(substr(strrchr($src,"."),1));
 	  if($type == 'jpeg') $type = 'jpg';
 	  switch($type){
@@ -49,19 +58,26 @@ class ImageProcessor {
 	    case 'gif': $img = imagecreatefromgif($src); break;
 	    case 'jpg': $img = imagecreatefromjpeg($src); break;
 	    case 'png': $img = imagecreatefrompng($src); break;
-	    default : return "Unsupported picture type!";
+	    // "Unsupported picture type!"
+	    default : return false;
 	  }
 
 	  // resize
 	  if($crop){
-	    if($w < $width or $h < $height) return "Picture is too small!";
+	    if($w < $width or $h < $height) {
+	    		    $this->logger->warning('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
+	    		    return false;
+		}
 	    $ratio = max($width/$w, $height/$h);
 	    $h = $height / $ratio;
 	    $x = ($w - $width / $ratio) / 2;
 	    $w = $width / $ratio;
 	  }
 	  else{
-	    if($w < $width and $h < $height) return "Picture is too small!";
+	    if($w < $width and $h < $height) {
+	    		    $this->logger->warning('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
+	    		    return false;
+		};
 	    $ratio = min($width/$w, $height/$h);
 	    $width = $w * $ratio;
 	    $height = $h * $ratio;
