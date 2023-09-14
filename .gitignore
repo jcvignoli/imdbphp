@@ -3,7 +3,7 @@
 /vendor
 /cache
 /.idea
-/.vscode
+*.vscode*
 /demo/images
 /.php-cs-fixer.cache
 .DS_Store

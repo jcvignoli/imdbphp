@@ -214,7 +214,12 @@ class Person extends MdbBase
             return false;
         }
         fputs($fp2, $fp);
-        return true;
+        
+        // Added by JCV, resize the big posters
+	if ( $this->img_processor->maybe_resize_big($path, 0 /** whether crop or not the picture */ ) === true ) {
+	        return true;
+	}
+        return false;
     }
 
     /** Get the URL for the movies cover photo

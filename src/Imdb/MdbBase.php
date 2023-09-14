@@ -74,6 +74,12 @@ class MdbBase extends Config
      * @var GraphQL
      */
     protected $graphql;
+    
+    /**
+     * Added by JCV
+     * @var ImageProcessor
+     */
+    protected $img_processor;
 
     protected $page = array();
 
@@ -99,6 +105,10 @@ class MdbBase extends Config
                        "imdbsite",
                        "cachedir",
                        "usecache",
+                       // Added by JCV
+                       "big_image_width",
+                       "big_image_height",
+                       // Added by JCV
                        "storecache",
                        "usezip",
                        "converttozip",
@@ -126,6 +136,8 @@ class MdbBase extends Config
         $this->cache = empty($cache) ? new Cache($this->config, $this->logger) : $cache;
         $this->pages = new Pages($this->config, $this->cache, $this->logger);
         $this->graphql = new GraphQL($this->cache, $this->logger, $this->config);
+        // Added by JCV
+        $this->img_processor = new ImageProcessor($this->big_image_width, $this->big_image_height);
     }
 
     /**

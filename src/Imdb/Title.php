@@ -601,6 +601,9 @@ query Recommendations(\$id: ID!) {
           primaryImage {
             url
           }
+          releaseYear {
+            year
+          }
         }
       }
     }
@@ -608,17 +611,23 @@ query Recommendations(\$id: ID!) {
 }
 EOF;
             $data = $this->graphql->query($query, "Recommendations", ["id" => "tt$this->imdbID"]);
-
+            $thumb = '';
             foreach ($data->title->moreLikeThisTitles->edges as $edge) {
+                if (isset($edge->node->primaryImage->url) && $edge->node->primaryImage->url != null) {
+                    $img = str_replace('.jpg', '', $edge->node->primaryImage->url);
+                    $thumb = $img . 'QL100_SY207_.jpg';
+                }
                 $this->movierecommendations[] = array(
-                    "title" => $edge->node->titleText->text,
+                    "title" => ucwords($edge->node->titleText->text),
                     "imdbid" => str_replace('tt', '', $edge->node->id),
-                    "rating" => $edge->node->ratingsSummary->aggregateRating,
-                    "img" => $edge->node->primaryImage->url,
+                    "rating" => isset($edge->node->ratingsSummary->aggregateRating) ? $edge->node->ratingsSummary->aggregateRating : null,
+                    "img" => $thumb,
+                    "year" => isset($edge->node->releaseYear->year) ? $edge->node->releaseYear->year : null
                 );
             }
         }
         return $this->movierecommendations;
+
     }
 
     #--------------------------------------------------------------[ Keywords ]---
@@ -1100,9 +1109,9 @@ query Poster(\$id: ID!) {
 EOF;
 
         $data = $this->graphql->query($query, "Poster", ["id" => "tt$this->imdbID"]);
-
         if (isset($data->title->primaryImage->url) && $data->title->primaryImage->url != null) {
-            $this->main_poster_thumb = $data->title->primaryImage->url;
+            $img = str_replace('.jpg', '', $data->title->primaryImage->url);
+            $this->main_poster_thumb = $img . 'QL100_SY268_.jpg';
             if (strpos($data->title->primaryImage->url, '._V1')) {
                 $this->main_poster = preg_replace('#\._V1_.+?(\.\w+)$#is', '$1', $this->main_poster_thumb);
             }
@@ -1168,8 +1177,14 @@ EOF;
             $this->logger->warning("Failed to open [$path] for writing  at " . __FILE__ . " line " . __LINE__ . "...<BR>");
             return false;
         }
+
         fputs($fp2, $image);
-        return true;
+
+	// Added by JCV, resize the big posters
+	if ( $this->img_processor->maybe_resize_big($path, 0 /** whether crop or not the picture */ ) === true ) {
+	        return true;
+	}
+	return false;
     }
 
     /** Get the URL for the movies cover image

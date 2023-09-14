@@ -110,6 +110,12 @@ class Config
      */
     public $throwHttpExceptions = true;
 
+    /**
+     * Added by JCV
+     */
+    public int $big_image_width = 800;
+    public int $big_image_height = 800;
+    
     #--------------------------------------------------=[ TWEAKING OPTIONS ]=--
 
     /**
