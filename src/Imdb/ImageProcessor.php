@@ -26,16 +26,16 @@ class ImageProcessor {
 	public function maybe_resize_big($src, $crop=0): bool {
 
 		 if ( is_file( $src ) && str_contains( $src, '_big' ) ) {
-			$pic_type = strtolower(strrchr($src,"."));     
+			$pic_type = strtolower(strrchr($src,"."));
 			$path_tmp = str_replace( '_big', '_big_tmp', $src );
 			$bool_result = $this->image_resize($src, $path_tmp, $this->width, $this->width, 0);
 			unlink($src);
 			if ( $bool_result === true ) {
-				$this->logger->debug('[ImageProcessor] Picture ' .  strrchr ( $src, '/' ) . ' successfully processed ');
+				$this->logger->debug('[ImageProcessor] Size of picture ' .  strrchr ( $src, '/' ) . ' successfully reduced.');
 				rename( $path_tmp, $src );
 				return true;
 			}
-			$this->logger->warning('[ImageProcessor] Could not process ' . strrchr ( $src, '/' ) );
+			$this->logger->notice('[ImageProcessor] Could not reduce the size of ' . strrchr ( $src, '/' ) );
 			return false;
 		}
 		return false;
@@ -48,7 +48,7 @@ class ImageProcessor {
 	private function image_resize($src, $dst, $width, $height, $crop=0): bool|string {
 
 	  if(!list($w, $h) = getimagesize($src)) {
-	    		    $this->logger->warning('[ImageProcessor] Unsupported picture type ' . strrchr ( $src, '/' ) );
+	    		    $this->logger->notice('[ImageProcessor] Unsupported picture type ' . strrchr ( $src, '/' ) );
 	    		    return false;
 		};
 	  $type = strtolower(substr(strrchr($src,"."),1));
@@ -65,7 +65,7 @@ class ImageProcessor {
 	  // resize
 	  if($crop){
 	    if($w < $width or $h < $height) {
-	    		    $this->logger->warning('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
+	    		    $this->logger->notice('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
 	    		    return false;
 		}
 	    $ratio = max($width/$w, $height/$h);
@@ -75,7 +75,7 @@ class ImageProcessor {
 	  }
 	  else{
 	    if($w < $width and $h < $height) {
-	    		    $this->logger->warning('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
+	    		    $this->logger->notice('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
 	    		    return false;
 		};
 	    $ratio = min($width/$w, $height/$h);
