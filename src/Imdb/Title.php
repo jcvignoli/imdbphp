@@ -2178,9 +2178,9 @@ EOF;
 
                         $episode = array(
                             'imdbid' => $ep['imdbid'],
-                            'title' => trim($ep['title']),
+                            'title' => !empty($ep['titleText']) ? trim($ep['titleText']) : '',
                             'airdate' => $ep['airdate'],
-                            'plot' => strip_tags($plot),
+                            'plot' => !empty($ep['plot']) ? strip_tags($ep['plot']) : '',
                             'season' => (int)$s,
                             'episode' => (int)$ep['episodeNumber'],
                             'image_url' => $image_url
