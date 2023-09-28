@@ -234,6 +234,7 @@ query TitleYear(\$id: ID!) {
 EOF;
 
         $data = $this->graphql->query($query, "TitleYear", ["id" => "tt$this->imdbID"]);
+	$title_txt_valid = isset($data->title->titleText) ? $data->title->titleText->text : '';
 
         $this->main_title = ucwords(trim(str_replace('"', ':', trim($data->title->titleText->text, '"'))));
         $this->main_movietype = isset($data->title->titleType->text) ? $data->title->titleType->text : '';
@@ -241,7 +242,8 @@ EOF;
         $this->main_endyear = isset($data->title->releaseYear->endYear) ? $data->title->releaseYear->endYear : null;
         if ($this->main_year == "????") {
             $this->main_year = "";
-        }    }
+        }
+    }
 
     /** Get movie type
      * @return string movietype (TV Series, Movie, TV Episode, TV Special, TV Movie, TV Mini-Series, Video Game, TV Short, Video)
