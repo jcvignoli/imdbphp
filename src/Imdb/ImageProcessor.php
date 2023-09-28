@@ -10,15 +10,23 @@ use Psr\Log\LoggerInterface;
 
 class ImageProcessor {
 
+	private LoggerInterface $logger;
+	private string $width;
+	private string $height;
+
 	/**
 	 * $width and $height are passed in MdbBase construct 
 	 * 800 for both properties by default in Config
 	 */
 	public function __construct(
-		private LoggerInterface $logger,
-		private string $width,
-		private string $height
-	) {}
+		LoggerInterface $logger,
+		string $width,
+		string $height
+	) {
+		$this->logger = $logger;
+		$this->width = $width;
+		$this->height = $height;
+	}
 
 	/**
 	 * Process with image_resize() ?
@@ -28,7 +36,7 @@ class ImageProcessor {
 		 if ( is_file( $src ) && str_contains( $src, '_big' ) ) {
 			$pic_type = strtolower(strrchr($src,"."));
 			$path_tmp = str_replace( '_big', '_big_tmp', $src );
-			$bool_result = $this->image_resize($src, $path_tmp, $this->width, $this->width, 0);
+			$bool_result = $this->image_resize($src, $path_tmp, $this->width, $this->height, 0);
 			unlink($src);
 			if ( $bool_result === true ) {
 				$this->logger->debug('[ImageProcessor] Size of picture ' .  strrchr ( $src, '/' ) . ' successfully reduced.');
@@ -44,8 +52,9 @@ class ImageProcessor {
 	/**
 	 * Resize the pictures, new function, dirtily added here by JCV
 	 * https://www.php.net/manual/en/function.imagecopyresampled.php#104028
+	 * @return bool
 	 */
-	private function image_resize($src, $dst, $width, $height, $crop=0): bool|string {
+	private function image_resize($src, $dst, $width, $height, $crop=0) {
 
 	  if(!list($w, $h) = getimagesize($src)) {
 	    		    $this->logger->notice('[ImageProcessor] Unsupported picture type ' . strrchr ( $src, '/' ) );

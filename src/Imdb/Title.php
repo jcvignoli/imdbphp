@@ -697,8 +697,8 @@ EOF;
                     $this->langs[] = $language->text;
                 }
             }
-            return $this->langs;
         }
+        return $this->langs;
     }
 
     /** Get all languages this movie is available in
