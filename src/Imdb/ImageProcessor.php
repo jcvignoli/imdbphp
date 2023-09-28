@@ -37,8 +37,8 @@ class ImageProcessor {
 			$pic_type = strtolower(strrchr($src,"."));
 			$path_tmp = str_replace( '_big', '_big_tmp', $src );
 			$bool_result = $this->image_resize($src, $path_tmp, $this->width, $this->height, 0);
-			unlink($src);
 			if ( $bool_result === true ) {
+				unlink($src);
 				$this->logger->debug('[ImageProcessor] Size of picture ' .  strrchr ( $src, '/' ) . ' successfully reduced.');
 				rename( $path_tmp, $src );
 				return true;
