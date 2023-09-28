@@ -132,8 +132,8 @@ class Cache implements CacheInterface
                 if (is_dir($fname)) {
                     continue;
                 }
-                $mod = filemtime($fname);
-                if ($mod && ($now - $mod > $this->config->cache_expire)) {
+                $mod = is_file($fname) ? filemtime($fname) : null;
+                if (isset($mod) && ($now - $mod > $this->config->cache_expire)) {
                     unlink($fname);
                 }
             }
