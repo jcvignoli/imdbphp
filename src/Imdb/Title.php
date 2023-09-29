@@ -1183,10 +1183,9 @@ EOF;
         fputs($fp2, $image);
 
 	// Added by JCV, resize the big posters
-	if ( $this->img_processor->maybe_resize_big($path, 0 /** whether crop or not the picture */ ) === true ) {
-	        return true;
-	}
-	return false;
+	$this->img_processor->maybe_resize_big($path, 0 /** whether crop or not the picture */ );
+
+        return true;
     }
 
     /** Get the URL for the movies cover image

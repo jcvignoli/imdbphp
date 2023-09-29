@@ -53,6 +53,7 @@ class ImageProcessor {
 	/**
 	 * Resize the pictures, new function, dirtily added here by JCV
 	 * https://www.php.net/manual/en/function.imagecopyresampled.php#104028
+	 * @param int $crop whether to crop to a smaller size the picture, it actually modifies it
 	 * @return bool
 	 */
 	private function image_resize($src, $dst, $width, $height, $crop=0) {
@@ -73,8 +74,9 @@ class ImageProcessor {
 	  }
 
 	  // resize
-	  if($crop){
-	    if($w < $width or $h < $height) {
+	  // resize
+	  if($crop === 1 ){
+	    if($w < $width || $h < $height) {
 	    		    $this->logger->notice('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
 	    		    return false;
 		}
@@ -82,12 +84,13 @@ class ImageProcessor {
 	    $h = $height / $ratio;
 	    $x = ($w - $width / $ratio) / 2;
 	    $w = $width / $ratio;
-	  }
-	  else{
-	    if($w < $width and $h < $height) {
-	    		    $this->logger->notice('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
-	    		    return false;
-		};
+
+	  } elseif( $crop === 0 ) {
+
+	    if($w < $width && $h < $height) {
+	    	$this->logger->notice('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
+	    	return false;
+	    };
 	    $ratio = min($width/$w, $height/$h);
 	    $width = $w * $ratio;
 	    $height = $h * $ratio;
