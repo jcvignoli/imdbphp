@@ -2627,14 +2627,16 @@ EOF;
                 } else {
                     $title = 'Unknown';
                 }
-                foreach ($edge->node->comments as $key => $comment) {
-                    if (trim(strip_tags($comment->plainText)) !== '') {
-                        $credits .= $comment->plainText;
-                        if ($key !== array_key_last($edge->node->comments)) {
-                            $credits .= '&#10;';
-                        }
-                    }
-                }
+                if (isset($edge->node->comments) && $edge->node->comments !== '' {
+		        foreach ($edge->node->comments as $key => $comment) {
+		            if (trim(strip_tags($comment->plainText)) !== '') {
+		                $credits .= $comment->plainText;
+		                if ($key !== array_key_last($edge->node->comments)) {
+		                    $credits .= '&#10;';
+		                }
+		            }
+		        }
+		}
                 $this->soundtracks[] = array(
                         'soundtrack' => $title,
                         'credits' => $credits
