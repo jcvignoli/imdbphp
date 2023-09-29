@@ -104,7 +104,9 @@ class ImageProcessor {
 	    case 'jpg': imagejpeg($new, $dst); break;
 	    case 'png': imagepng($new, $dst); break;
 	  }
-	  return true;
+  	  if( is_file( $dst ) ) {
+		  return true;
+	  }
+	  return false;
 	}
-
 }
