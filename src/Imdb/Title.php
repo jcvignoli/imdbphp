@@ -2627,7 +2627,7 @@ EOF;
                 } else {
                     $title = 'Unknown';
                 }
-                if (isset($edge->node->comments) && $edge->node->comments !== '' {
+                if (isset($edge->node->comments) && $edge->node->comments !== '' ) {
 		        foreach ($edge->node->comments as $key => $comment) {
 		            if (trim(strip_tags($comment->plainText)) !== '') {
 		                $credits .= $comment->plainText;
