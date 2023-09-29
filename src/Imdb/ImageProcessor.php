@@ -74,7 +74,7 @@ class ImageProcessor {
 	  }
 
 	  // resize
-	  // resize
+	  $x = 0;
 	  if($crop === 1 ){
 	    if($w < $width || $h < $height) {
 	    		    $this->logger->notice('[ImageProcessor] Picture ' . strrchr ( $src, '/' ) . ' is too small to be resized');
@@ -94,7 +94,6 @@ class ImageProcessor {
 	    $ratio = min($width/$w, $height/$h);
 	    $width = $w * $ratio;
 	    $height = $h * $ratio;
-	    $x = 0;
 	  }
 
 	  $new = imagecreatetruecolor( (int) $width, (int) $height);
