@@ -121,6 +121,12 @@ class Pages
 
     protected function buildRequest($url)
     {
+    	// @new as 20240128 -> avoid IMDb 504 HTML errors by delaying the queries made.
+    	$time = $this->config->delay_imdb_request;
+    	if ( $this->config->delay_imdb_request > 0 ) {
+		$this->logger->debug("[Page] Sleeping for the request of [$url] " . strval( $time ) . ' seconds to reduce the number of requests to IMDb' );
+	    	sleep( $time );
+	}
         return new Request($url, $this->config);
     }
 }
