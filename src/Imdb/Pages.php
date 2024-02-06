@@ -10,6 +10,12 @@ use Psr\SimpleCache\CacheInterface;
  */
 class Pages
 {
+
+    /**
+     * Limit the number of checks to IMDB website
+     */
+    private int $nb_imdb_calls = 1;
+
     /**
      * @var Config
      */
@@ -88,6 +94,16 @@ class Pages
             $this->logger->debug("[Page] Following redirect from [$url] to [$redirectUrl]");
             return $this->requestPage($redirectUrl);
         } else {
+            /**
+             * @since 20240205 added by JCV
+             * Try three downloads in total from IMDb website before giving up
+             */
+            if ( $this->nb_imdb_calls <= 3 ) {
+                $this->nb_imdb_calls += 1;
+            	sleep( 5 );
+                $this->requestPage($url);
+            }
+                
             $this->logger->error(
                 "[Page] Failed to retrieve url [{url}]. Response headers:{headers}",
                 array('url' => $url, 'headers' => $req->getLastResponseHeaders())
