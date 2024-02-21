@@ -534,7 +534,7 @@ EOF;
         if ($this->main_comment == "") {
             $t = $this->getXpathPage('Title');
             $reviewRaw = $t->query("//div[@data-testid='review-overflow']");
-            $this->main_comment = $reviewRaw->item(0)->textContent;
+            $this->main_comment = isset( $reviewRaw->item(0)->textContent ) && strlen( $reviewRaw->item(0)->textContent ) ?  $reviewRaw->item(0)->textContent : '';
         }
         return $this->main_comment;
     }
