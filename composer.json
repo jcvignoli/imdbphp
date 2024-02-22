@@ -22,12 +22,16 @@
         "mockery/mockery": "1.5.1",
         "phpstan/phpstan": "@stable",
         "phpunit/phpunit": "^9.5",
+        "phan/phan": "@stable",
+        "wapmorgan/php-deprecation-detector": "@stable",
         "friendsofphp/php-cs-fixer": "^3.13"
     },
     "scripts": {
         "test": "phpunit -c tests/phpunit.xml tests",
         "test:clean": "php tests/clearCache.php && composer test",
         "phpstan": "phpstan analyse",
+        "phpdd": "phpdd ./src/Imdb",
+        "phan": "phan -k phan.php",
         "cs": "php-cs-fixer fix --ansi --verbose --dry-run --diff",
         "cs:no-cache": "php-cs-fixer fix --ansi --verbose --dry-run --diff --using-cache=no",
         "cs-fix": "php-cs-fixer fix --ansi --verbose --diff",
