@@ -505,7 +505,7 @@ EOF;
     public function metacriticRating()
     {
         $xpath = $this->getXpathPage("Title");
-        $extract = $xpath->query("//span[@class='score-meta']");
+        $extract = $xpath->query("//span[contains(@class, 'metacritic-score-box')]");
         if ($extract && $extract->item(0) != null) {
             return intval(trim($extract->item(0)->nodeValue));
         }
@@ -847,7 +847,7 @@ EOF;
                 if ($creator->{'@type'} === 'Person') {
                     $result[] = array(
                         'name' => $creator->name,
-                        'imdb' => rtrim(str_replace('/name/nm', '', $creator->url), '/')
+                        'imdb' => preg_replace('@.*name\/nm(\d+).*@i', '$1', $creator->url)
                     );
                 }
             }
@@ -2089,12 +2089,14 @@ EOF;
     {
         if (empty($this->crazy_credits)) {
             if (preg_match_all(
-                '!<div class="sodatext">\s*(.*?)\s*</div>!ims',
+               '!<p class="crazy-credit-text">\s*(.*?)\s*</p>!ims',
                 $this->getPage("CrazyCredits"),
                 $matches
             )) {
                 foreach ($matches[1] as $credit) {
-                    $this->crazy_credits[] = trim(strip_tags($credit));
+                    $this->crazy_credits[] = str_replace(array("\r", "\n"), ' ', trim(
+                        strip_tags(htmlspecialchars_decode($credit, ENT_QUOTES))
+                    ));
                 }
             }
         }
@@ -2261,7 +2263,7 @@ EOF;
             }
 
             if (preg_match_all(
-                '!<div class="sodatext">\s*(.*?)\s*</div>!ims',
+                '!<div class="ipc-html-content-inner-div">\s*(.*?)\s*</div>!ims',
                 str_replace("\n", " ", $page),
                 $matches
             )) {
@@ -2290,11 +2292,11 @@ EOF;
             $i = 0;
             if (!empty($this->moviequotes)) {
                 foreach ($this->moviequotes as $moviequotes) {
-                    if (@preg_match_all('!<p>\s*(.*?)\s*</p>!', $moviequotes, $matches)) {
+                    if (@preg_match_all('!<li>\s*(.*?)\s*</li>!', $moviequotes, $matches)) {
                         if (!empty($matches[1])) {
                             foreach ($matches[1] as $quote) {
                                 if (@preg_match(
-                                    '!href="([^"]*)"\s*>.+?character">(.*?)</span.+?:(.*)!',
+                                    '!href="([^"]*)"\s*>(.*?)<\/a>:(.*)!',
                                     $quote,
                                     $match
                                 )) {
@@ -2816,14 +2818,14 @@ EOF;
      * Filming locations
      * @return string[]
      * @see IMDB page /locations
+     * @version Limited to 5 locations
      */
     public function locations()
     {
         if (empty($this->locations)) {
-            $xpath = $this->getXpathPage("Locations");
-            $cells = $xpath->query("//section[@id=\"filming_locations\"]//dt");
-            foreach ($cells as $cell) {
-                $this->locations[] = trim($cell->nodeValue);
+            $locations = $this->XmlNextJson("Locations")->xpath("//cardText");
+            foreach ($locations as $location) {
+                $this->locations[] = trim(strval($location));
             }
         }
         return $this->locations;
@@ -3066,12 +3068,13 @@ EOF;
     /** Get the complete keywords for the movie
      * @return array keywords
      * @see IMDB page /keywords
+     * @version Limited to 50 keywords
      */
     public function keywords_all()
     {
         if (empty($this->all_keywords)) {
             $page = $this->getPage("Keywords");
-            if (preg_match_all('|<a href="/search/keyword[^>]+?>(.*?)</a>|', $page, $matches)) {
+           if (preg_match_all('|<a.*?href="/search/keyword[^>]+?>(.*?)</a>|', $page, $matches)) {
                 $this->all_keywords = $matches[1];
             }
         }
@@ -3229,7 +3232,7 @@ EOF;
     {
         if (empty($this->filmingDates)) {
             $page = $this->getPage("Locations");
-            if (@preg_match("!<h4[^>]+>Filming Dates</h4>\s*\n*(.*?)(<br/>\n*)*</section!ims", $page, $filDates)) {
+            if (@preg_match('!sub-section-flmg_dates".*?<\/section!ims', $page, $filDates)) {
                 if (preg_match("/(\d+ \w+ \d{4}) - (\d+ \w+ \d{4})/", strip_tags($filDates[1]), $dates)) {
                     $this->filmingDates = array(
                         'beginning' => date('Y-m-d', strtotime($dates[1])),
@@ -3314,14 +3317,15 @@ EOF;
     }
 
     /**
+     * @param string $page
      * @return \SimpleXMLElement
      */
-    protected function XmlNextJson()
+    protected function XmlNextJson($page = "Title")
     {
-        if ($this->XmlNextJson) {
-            return $this->XmlNextJson;
-        }
-        $xpath = $this->getXpathPage("Title");
+        $xpath = $this->getXpathPage($page);
+        $script = $xpath->query("//script[@id='__NEXT_DATA__']")->item(0)->nodeValue;
+        $decode = json_decode($script, true);
+        $xml = new \SimpleXMLElement('<root/>');
         $script = $xpath->query("//script[@id='__NEXT_DATA__']")->item(0)->nodeValue;
         $decode = json_decode($script, true);
         $xml = new \SimpleXMLElement('<root/>');
