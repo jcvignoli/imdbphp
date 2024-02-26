@@ -492,8 +492,8 @@ if (isset ($_GET["mid"]) && preg_match('/^[0-9]+$/',$_GET["mid"])) {
           <td>
           <?php
             foreach($trailers as $t) {
-              if(!empty($t['url'])) { ?>
-                <a href="<?php echo $t['url'] ?>"><?php echo $t['title'] ?></a><br>
+              if(!empty($t['videoUrl'])) { ?>
+                <a href="<?php echo $t['videoUrl'] ?>"><?php echo $t['title'] ?></a><br>
               <?php
               }
             }
