@@ -2,6 +2,19 @@
 History for IMDBPHP
 ====================
 
+v8.2.0 (25.02.2024)
+-------------------
++ Add Podcast Episode support #326 by @Fossil01
+! Fix Title::trivia() - limited to 5 entries
+! Fix Title::filmingDates()
+! Fix Title::keywords_all() - limited to 50 entries
+! Fix Title::locations() - limited to 5 entries
+! Fix Title::quotes() and Title::quotes_split()
+! Fix Title::goofs() - limited to 5 entries
+! Fix Title::crazy_credits()
+! Fix Title::metacriticRating()
+! Fix Title::creator()
+
 v8.1.0 (14.03.2023)
 -------------------
 

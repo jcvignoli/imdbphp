@@ -2332,38 +2332,103 @@ EOF;
     public function trailers($full = false)
     {
         if (empty($this->trailers)) {
-            $page = $this->getPage("Trailers");
-            if (empty($page)) {
-                return array();
-            } // no such page
+            $query = <<<EOF
+query Video(\$id: ID!) {
+  title(id: \$id) {
+    primaryVideos(first: 9999) {
+      edges {
+        node {
+          playbackURLs {
+            url
+          }
+          thumbnail {
+            url
+            width
+            height
+          }
+          runtime {
+            value
+          }
+          contentType {
+            displayName {
+              value
+            }
+          }
+          primaryTitle {
+            titleText {
+              text
+            }
+          }
+        }
+      }
+    }
+  }
+}
+EOF;
 
-            $has_trailers = strpos($page, '<div class="search-results"><ol>');
-            if ($has_trailers !== false) {
-                $html_trailer = substr(
-                    $page,
-                    $has_trailers,
-                    strpos($page, '</ol>', $has_trailers) - ($has_trailers + 1)
-                );
-                $doc = new \DOMDocument();
-                @$doc->loadHTML('<?xml encoding="UTF-8">' . $html_trailer);
-                foreach ($doc->getElementsByTagName('li') as $trailerNode) {
-                    $titleNode = $trailerNode->getElementsByTagName('a')->item(1);
-                    $title = $titleNode->nodeValue;
-                    $url = "https://" . $this->imdbsite . $titleNode->getAttribute('href');
-                    $imageUrl = $trailerNode->getElementsByTagName('img')->item(0)->getAttribute('loadlate');
-                    $res = (strpos($imageUrl, 'HDIcon') !== false) ? 'HD' : 'SD';
+            $data = $this->graphql->query($query, "Video", ["id" => "tt$this->imdbID"]);
+            foreach ($data->title->primaryVideos->edges as $edge) {
+                // check if url and contentType is set and contentType = Trailer
+                if (!isset($edge->node->playbackURLs[0]->url) ||
+                    !isset($edge->node->contentType->displayName->value) ||
+                    $edge->node->contentType->displayName->value !== "Trailer") {
+                    continue;
+                }
 
-                    if ($full) {
-                        $this->trailers[] = array(
-                            'title' => $title,
-                            'url' => $url,
-                            'resolution' => $res,
-                            'lang' => '',
-                            'restful_url' => ''
-                        );
-                    } else {
-                        $this->trailers[] = $url;
+                // Video ID
+                $videoId = explode("/", parse_url($edge->node->playbackURLs[0]->url, PHP_URL_PATH));
+
+                // Embed URL
+                $embedUrl = "https://www.imdb.com/video/imdb/" . $videoId[1] . "/imdb/embed";
+
+                $thumbUrl = '';
+                if (isset($edge->node->thumbnail->url) && $edge->node->thumbnail->url != '') {
+                    // Runtime
+                    $runtime = $edge->node->runtime->value;
+                    $minutes = sprintf("%02d", ($runtime / 60));
+                    $seconds = sprintf("%02d", $runtime % 60);
+
+                    // Title
+                    $title = $edge->node->primaryTitle->titleText->text;
+                    $title_raw = rawurlencode(rawurlencode($title));
+
+                    // calculate if the source image is HD aspect ratio or not
+                    $fullImageWidth = $edge->node->thumbnail->width;
+                    $fullImageHeight = $edge->node->thumbnail->height;
+                    $HDicon = 'PIimdb-HDIconMiniWhite,BottomLeft,4,-2_';
+                    $margin = '24';
+                    $aspectRatio = $fullImageWidth / $fullImageHeight;
+                    if ($aspectRatio < 1.77) {
+                        $HDicon = '';
+                        $margin = '4';
+                    } elseif ($fullImageWidth < 1280) {
+                        $HDicon = '';
+                        $margin = '4';
+                    } elseif ($fullImageHeight < 720) {
+                        $HDicon = '';
+                        $margin = '4';
                     }
+
+                    // Thumbnail URL
+                    $thumbUrl = str_replace('.jpg', '', $edge->node->thumbnail->url);
+                    $thumbUrl .= '1_SP330,330,0,C,0,0,0_CR65,90,200,150_'
+                                 . 'PIimdb-blackband-204-14,TopLeft,0,0_'
+                                 . 'PIimdb-blackband-204-28,BottomLeft,0,1_CR0,0,200,150_'
+                                 . 'PIimdb-bluebutton-big,BottomRight,-1,-1_'
+                                 . 'ZATrailer,4,123,16,196,verdenab,8,255,255,255,1_'
+                                 . 'ZAon%2520IMDb,4,1,14,196,verdenab,7,255,255,255,1_'
+                                 . 'ZA' . $minutes . '%253A' . $seconds .',164,1,14,36,verdenab,7,255,255,255,1_'
+                                 . $HDicon
+                                 . 'ZA' . $title_raw . ',' . $margin . ',138,14,176,arialbd,7,255,255,255,1_.jpg';
+
+                }
+
+                if (count($this->trailers) <= 1) {
+                    $this->trailers[] = array(
+                        'videoUrl' => $embedUrl,
+                        'videoImageUrl' => $thumbUrl,
+                        'title' => $title
+                    );
                 }
             }
         }
