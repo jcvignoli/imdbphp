@@ -2328,6 +2328,7 @@ EOF;
      * @param boolean $full Retrieve all available data (TRUE), or stay compatible with previous IMDBPHP versions (FALSE, Default)
      * @return mixed trailers either array[0..n] of string ($full=FALSE), or array[0..n] of array[lang,title,url,restful_url,resolution] ($full=TRUE)
      * @see IMDB page /trailers
+     * @info adapted from https://github.com/duck7000/imdbphp6/blob/master/src/Imdb/Title.php and removed get_headers() check (fails) and added title field return
      */
     public function trailers($full = false)
     {
